@@ -1,32 +1,19 @@
-# ============================================================
-# Kubernetes Deployment — IoT Dashboard
-# Manages how the app runs inside the cluster
-# ============================================================
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  # Name of this deployment
   name: iot-dashboard
   labels:
     app: iot-dashboard
-
 spec:
-  # Run 2 copies of the pod for availability
   replicas: 2
-
-  # Tells K8s which pods this deployment manages
   selector:
     matchLabels:
       app: iot-dashboard
-
-  # Rolling update — replaces pods one by one (zero downtime)
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1        # Allow 1 extra pod during update
-      maxUnavailable: 0  # Never have fewer than desired pods
-
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -34,22 +21,19 @@ spec:
     spec:
       containers:
         - name: iot-dashboard
-          # Image from Docker Hub — Jenkins updates this tag on each build
-          image: raghuksit/iot-dashboard:latest
-          # Always pull latest image from Docker Hub
-          imagePullPolicy: Always
-          # Container listens on port 80 (Nginx)
+          # DIRECTIVE: Use the version-specific tag we built in Jenkins
+          image: iot-dashboard:v2 
+          # DIRECTIVE: Prevent K8s from looking at external registries
+          imagePullPolicy: IfNotPresent 
           ports:
             - containerPort: 80
-          # Resource limits — prevents one pod eating all cluster resources
           resources:
             requests:
-              memory: "64Mi"   # Minimum memory guaranteed
-              cpu: "100m"      # 0.1 CPU core minimum
+              memory: "64Mi"
+              cpu: "100m"
             limits:
-              memory: "128Mi"  # Maximum memory allowed
-              cpu: "200m"      # 0.2 CPU core maximum
-          # Health check — K8s restarts pod if this fails
+              memory: "128Mi"
+              cpu: "200m"
           readinessProbe:
             httpGet:
               path: /

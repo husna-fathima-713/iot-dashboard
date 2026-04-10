@@ -1,27 +1,13 @@
-# ============================================================
-# Kubernetes Service — IoT Dashboard
-# Exposes the deployment to the outside world
-# ============================================================
-
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: iot-dashboard
-  labels:
-    app: iot-dashboard
-
+  name: iot-service
 spec:
-  # NodePort exposes the app on a port on the host machine
-  # Other options: ClusterIP (internal only), LoadBalancer (cloud)
   type: NodePort
-
   selector:
-    # Must match the labels in deployment.yaml
     app: iot-dashboard
-
   ports:
-    - name: http
-      protocol: TCP
-      port: 80         # Port inside the cluster
-      targetPort: 80   # Port on the container (Nginx)
-      nodePort: 30080  # Port accessible from outside (30000-32767 range)
+    - port: 80
+      targetPort: 80
+      nodePort: 30082 # Access via http://<minikube-ip>:30082
