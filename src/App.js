@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-// Configuration for Environmental Sensors
 const SENSOR_CONFIG = [
   { id: "temp", name: "Temperature", unit: "°C", min: 18, max: 38, warn: 32, color: "#4299e1" },
   { id: "hum",  name: "Humidity",    unit: "%",  min: 30, max: 90, warn: 75, color: "#48bb78" },
@@ -8,6 +7,13 @@ const SENSOR_CONFIG = [
   { id: "co2",  name: "CO2 Level",   unit: "ppm",min: 400, max: 1200, warn: 900, color: "#ecc94b" },
   { id: "aqi",  name: "Air Quality", unit: "AQI",min: 10, max: 200, warn: 100, color: "#f56565" },
 ];
+
+// REVISION: Added Build Metadata for Jenkins Verification
+const DEPLOYMENT_INFO = {
+  version: "v2.1.0-PROD",
+  build_id: "BUILD_ID_2026.04.11_REACTIVE",
+  author: "Husna Fathima | 1KS23IC023"
+};
 
 const SensorCard = ({ config, value }) => {
   const isWarning = value >= config.warn;
@@ -23,7 +29,7 @@ const SensorCard = ({ config, value }) => {
       padding: "24px 15px", textAlign: "center", flex: "1", minWidth: "160px",
       boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.1)`,
       transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-      transform: isWarning ? "scale(1.02)" : "scale(1)"
+      transform: isWarning ? "scale(1.05)" : "scale(1)"
     }}>
       <p style={{ margin: "0 0 8px", fontSize: "0.75rem", fontWeight: "700", color: "#718096", textTransform: "uppercase" }}>{config.name}</p>
       <h2 style={{ margin: "0", fontSize: "2.2rem", fontWeight: "800", color: theme.text }}>{value}</h2>
@@ -35,6 +41,7 @@ const SensorCard = ({ config, value }) => {
 export default function App() {
   const [data, setData] = useState({ temp: 22, hum: 45, pres: 1012, co2: 550, aqi: 42 });
   const [history, setHistory] = useState({ temp: [], aqi: [] });
+  const [logs, setLogs] = useState(["[SYS] Orchestrator Initialized...", "[K8S] Pod Connectivity Verified."]);
   const [time, setTime] = useState(new Date().toLocaleTimeString());
 
   useEffect(() => {
@@ -49,18 +56,22 @@ export default function App() {
         co2, aqi
       });
 
-      // Update history for the graph (keep last 20 points)
       setHistory(prev => ({
-        temp: [...prev.temp, temp].slice(-20),
-        aqi: [...prev.aqi, aqi].slice(-20)
+        temp: [...prev.temp, temp].slice(-25),
+        aqi: [...prev.aqi, aqi].slice(-25)
       }));
+
+      // ADDED: Security Logs for Visual Impact during Presentation
+      if (Math.random() > 0.7) {
+        const newLog = `[SEC] Inbound Packet: Payload_Size=${Math.floor(Math.random()*256)}kb | SRC_IP=192.168.1.${Math.floor(Math.random()*254)}`;
+        setLogs(prev => [newLog, ...prev].slice(0, 5));
+      }
 
       setTime(new Date().toLocaleTimeString());
     }, 2500);
     return () => clearInterval(interval);
   }, []);
 
-  // Helper to generate SVG Path for trends
   const getPath = (values, min, max) => {
     if (values.length < 2) return "";
     const width = 1000;
@@ -73,45 +84,51 @@ export default function App() {
   };
 
   return (
-    <div style={{ backgroundColor: "#f4f7fb", minHeight: "100vh", fontFamily: "'Inter', sans-serif", padding: "40px 20px" }}>
+    <div style={{ backgroundColor: "#0f172a", minHeight: "100vh", color: "white", padding: "40px 20px" }}>
       <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "40px" }}>
+        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px", borderBottom: "1px solid #1e293b", paddingBottom: "20px" }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: "800", color: "#1a202c" }}>IoT Sensor Dashboard</h1>
-            <p style={{ margin: "4px 0 0", color: "#718096", fontSize: "0.95rem" }}>Real-Time Environmental Monitoring | KSIT_CSE-ICB</p>
+            <h1 style={{ margin: 0, fontSize: "2rem", fontWeight: "900", color: "#38bdf8" }}>IOT DASHBOARD</h1>
+            <p style={{ margin: "4px 0 0", color: "#94a3b8" }}>{DEPLOYMENT_INFO.author} | <span style={{color: "#4ade80"}}>{DEPLOYMENT_INFO.version}</span></p>
           </div>
-          <div style={{ textAlign: "right", color: "#4a5568", fontWeight: "600" }}>
-            <span style={{ fontSize: "0.8rem", color: "#a0aec0", display: "block" }}>LIVE FEED</span>
-            {time}
+          <div style={{ textAlign: "right" }}>
+            <span style={{ fontSize: "0.8rem", color: "#64748b", display: "block" }}>TIME</span>
+            <span style={{ fontFamily: "monospace", fontSize: "1.2rem" }}>{time}</span>
           </div>
         </header>
 
-        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center", marginBottom: "30px" }}>
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "30px" }}>
           {SENSOR_CONFIG.map(config => <SensorCard key={config.id} config={config} value={data[config.id]} />)}
         </div>
 
-        {/* Informative Trend Graph */}
-        <div style={{ background: "white", borderRadius: "12px", padding: "30px", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
+        {/* Telemetry Analysis Section */}
+        <div style={{ background: "#1e293b", borderRadius: "12px", padding: "30px", marginBottom: "30px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-            <h3 style={{ margin: 0, fontSize: "1rem", color: "#2d3748" }}>Telemetric Analysis</h3>
-            <div style={{ display: "flex", gap: "15px", fontSize: "0.8rem", fontWeight: "bold" }}>
-              <span style={{ color: "#4299e1" }}>● Temperature Analysis</span>
-              <span style={{ color: "#f56565" }}>● AQI Index Analysis</span>
+            <h3 style={{ margin: 0, fontSize: "1rem", color: "#94a3b8" }}>LIVE TELEMETRY ANALYSIS</h3>
+            <div style={{ display: "flex", gap: "15px", fontSize: "0.8rem" }}>
+              <span style={{ color: "#4299e1" }}>TEMP ANALYSIS</span>
+              <span style={{ color: "#f56565" }}>AQI ANALYSIS</span>
             </div>
           </div>
-          <div style={{ background: "#f8fafc", borderRadius: "8px", height: "150px", overflow: "hidden" }}>
+          <div style={{ background: "#0f172a", borderRadius: "8px", height: "150px" }}>
             <svg viewBox="0 0 1000 150" preserveAspectRatio="none" style={{ width: "100%", height: "100%" }}>
-              <path d={getPath(history.temp, 15, 40)} fill="none" stroke="#4299e1" strokeWidth="4" strokeLinecap="round" style={{ transition: "all 0.5s ease" }} />
-              <path d={getPath(history.aqi, 0, 250)} fill="none" stroke="#f56565" strokeWidth="4" strokeLinecap="round" style={{ transition: "all 0.5s ease" }} />
+              <path d={getPath(history.temp, 15, 40)} fill="none" stroke="#4299e1" strokeWidth="4" />
+              <path d={getPath(history.aqi, 0, 250)} fill="none" stroke="#f56565" strokeWidth="4" />
             </svg>
           </div>
         </div>
 
-        <footer style={{ marginTop: "60px", paddingTop: "20px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#a0aec0" }}>
-          <div>STATUS: <span style={{ color: "#48bb78", fontWeight: "bold" }}>● CONNECTED</span></div>
-          <div>PROTOCOL: MQTT over WebSockets</div>
-          <div>BUILD: 2026.04.10_1KS23IC023</div>
+        {/* REVISION: Live Console Output for Cyber Security context */}
+        <div style={{ background: "black", padding: "15px", borderRadius: "8px", fontFamily: "monospace", color: "#4ade80", fontSize: "0.85rem", border: "1px solid #334155" }}>
+          <div style={{ color: "#64748b", marginBottom: "5px" }}>&gt; ACCESSING SYSTEM LOGS...</div>
+          {logs.map((log, i) => <div key={i}>{log}</div>)}
+        </div>
+
+        <footer style={{ marginTop: "40px", borderTop: "1px solid #1e293b", paddingTop: "20px", display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#64748b" }}>
+          <div>NODE_STATUS: <span style={{ color: "#4ade80" }}>ONLINE</span></div>
+          <div>DEPLOY_HASH: <span style={{ color: "#cbd5e1" }}>{DEPLOYMENT_INFO.build_id}</span></div>
+          <div>KSIT CSE-ICB</div>
         </footer>
       </div>
     </div>
